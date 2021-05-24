@@ -49,11 +49,13 @@ class MomVectorBacktester(object):
     def get_data(self):
         ''' Retrieves and prepares the data.
         '''
-        raw = pd.read_csv('http://hilpisch.com/pyalgo_eikon_eod_data.csv',
-                          index_col=0, parse_dates=True).dropna()
-        raw = pd.DataFrame(raw[self.symbol])
+        from_mili = f'{self.start.timestamp():.0f}'
+        to_mili = f'{self.end.timestamp():.0f}'
+        url = 'https://query1.finance.yahoo.com/v7/finance/download/' + self.symbol + '?period1=' + from_mili + '&period2=' + to_mili + '&interval=1d&events=history&includeAdjustedClose=true'
+        raw = pd.read_csv(url, index_col=0, parse_dates=True).dropna()
+        raw = pd.DataFrame(raw['Adj Close'])
         raw = raw.loc[self.start:self.end]
-        raw.rename(columns={self.symbol: 'price'}, inplace=True)
+        raw.rename(columns={'Adj Close': 'price'}, inplace=True)
         raw['return'] = np.log(raw / raw.shift(1))
         self.data = raw
 
@@ -77,7 +79,9 @@ class MomVectorBacktester(object):
         aperf = self.results['cstrategy'].iloc[-1]
         # out-/underperformance of strategy
         operf = aperf - self.results['creturns'].iloc[-1]
-        return round(aperf, 2), round(operf, 2)
+        # gross performance of the underlying
+        uperf = self.results['creturns'].iloc[-1]
+        return round(aperf, 2), round(operf, 2), round(uperf, 2)
 
     def plot_results(self):
         ''' Plots the cumulative performance of the trading strategy

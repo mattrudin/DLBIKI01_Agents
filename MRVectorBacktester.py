@@ -67,4 +67,6 @@ class MRVectorBacktester(MomVectorBacktester):
         aperf = self.results['cstrategy'].iloc[-1]
         # out-/underperformance of strategy
         operf = aperf - self.results['creturns'].iloc[-1]
-        return round(aperf, 2), round(operf, 2)
+        # gross performance of the underlying
+        uperf = self.results['creturns'].iloc[-1]
+        return round(aperf, 2), round(operf, 2), round(uperf, 2)

@@ -43,10 +43,10 @@ class SMAVectorBacktester(object):
      implements a brute force optimization for the two SMA parameters
      '''
 
-    def __init__(self, symbol, SMA1, SMA2, start, end):
+    def __init__(self, symbol, start, end):
         self.symbol = symbol
-        self.SMA1 = SMA1
-        self.SMA2 = SMA2
+        self.SMA1 = 10  # dummy value for initialisation
+        self.SMA2 = 200  # dummy value for initialisation
         self.start = start
         self.end = end
         self.results = None
@@ -55,11 +55,13 @@ class SMAVectorBacktester(object):
     def get_data(self):
         ''' Retrieves and prepares the data.
         '''
-        raw = pd.read_csv('http://hilpisch.com/pyalgo_eikon_eod_data.csv',
-                          index_col=0, parse_dates=True).dropna()
-        raw = pd.DataFrame(raw[self.symbol])
+        from_mili = f'{self.start.timestamp():.0f}'
+        to_mili = f'{self.end.timestamp():.0f}'
+        url = 'https://query1.finance.yahoo.com/v7/finance/download/' + self.symbol + '?period1=' + from_mili + '&period2=' + to_mili + '&interval=1d&events=history&includeAdjustedClose=true'
+        raw = pd.read_csv(url, index_col=0, parse_dates=True).dropna()
+        raw = pd.DataFrame(raw['Adj Close'])
         raw = raw.loc[self.start:self.end]
-        raw.rename(columns={self.symbol: 'price'}, inplace=True)
+        raw.rename(columns={'Adj Close': 'price'}, inplace=True)
         raw['return'] = np.log(raw / raw.shift(1))
         raw['SMA1'] = raw['price'].rolling(self.SMA1).mean()
         raw['SMA2'] = raw['price'].rolling(self.SMA2).mean()
@@ -91,7 +93,9 @@ class SMAVectorBacktester(object):
         aperf = data['cstrategy'].iloc[-1]
         # out-/underperformance of strategy
         operf = aperf - data['creturns'].iloc[-1]
-        return round(aperf, 2), round(operf, 2)
+        # gross performance of the underlying
+        uperf = data['creturns'].iloc[-1]
+        return round(aperf, 2), round(operf, 2), round(uperf, 2)
 
     def plot_results(self):
         ''' Plots the cumulative performance of the trading strategy
@@ -106,7 +110,6 @@ class SMAVectorBacktester(object):
         plt.show()
 
     def update_and_run(self, SMA):
-
         ''' Updates SMA parameters and returns negative absolute performance
         (for minimazation algorithm).
         Parameters
