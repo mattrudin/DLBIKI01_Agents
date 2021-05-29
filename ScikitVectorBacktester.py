@@ -7,10 +7,10 @@
 # (c) Dr. Yves J. Hilpisch
 # The Python Quants GmbH
 #
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from sklearn import linear_model
-import matplotlib.pyplot as plt
 
 
 class ScikitVectorBacktester(object):
@@ -46,20 +46,15 @@ class ScikitVectorBacktester(object):
     plots the performance of the strategy compared to the symbol
     '''
 
-    def __init__(self, symbol, start, end, amount, tc, model):
+    def __init__(self, symbol, start, end, amount, tc):
         self.symbol = symbol
         self.start = start
         self.end = end
         self.amount = amount
         self.tc = tc
         self.results = None
-        if model == 'regression':
-            self.model = linear_model.LinearRegression()
-        elif model == 'logistic':
-            self.model = linear_model.LogisticRegression(C=1e6,
-                                                         solver='lbfgs', multi_class='ovr', max_iter=1000)
-        else:
-            raise ValueError('Model not known or not yet implemented.')
+        self.model = linear_model.LogisticRegression(C=1e6,
+                                                     solver='lbfgs', multi_class='ovr', max_iter=1000)
         self.get_data()
 
     def get_data(self):
